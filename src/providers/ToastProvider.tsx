@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, CheckCircle2, Info, X, AlertTriangle } from 'lucide-react';
 import { useNotificationStore } from '../stores/NotificationStore';
 
-export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const ToastProvider: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const { notifications, removeNotification } = useNotificationStore();
 
   const getIcon = (type: string) => {

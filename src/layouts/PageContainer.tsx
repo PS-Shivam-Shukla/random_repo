@@ -1,11 +1,19 @@
-import React from 'react';
-import { cn } from '../lib/utils';
+import { ReactNode } from "react";
 
-export interface PageContainerProps {
-  children: React.ReactNode;
-  className?: string;
+interface Props {
+    children: ReactNode;
 }
 
-export const PageContainer: React.FC<PageContainerProps> = ({ children, className }) => {
-  return <div className={cn('w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1', className)}>{children}</div>;
-};
+export default function PageContainer({ children }: Props) {
+
+    return (
+
+        <main className="flex-1 overflow-auto p-8">
+
+            {children}
+
+        </main>
+
+    );
+
+}

@@ -3,20 +3,17 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import { AuthPage } from './AuthPage';
-import { authApi } from '../../services/auth.api';
+import { useAuth } from '../../hooks/useAuth';
 
-vi.mock('../../services/auth.api', () => ({
-  authApi: {
-    login: vi.fn(),
-    register: vi.fn(),
-  },
+vi.mock('../../hooks/useAuth', () => ({
+  useAuth: vi.fn(),
 }));
 
-const mockedLogin = vi.mocked(authApi.login);
+const mockedUseAuth = vi.mocked(useAuth);
 
 describe('AuthPage', () => {
   it('submits login credentials', async () => {
-    mockedLogin.mockResolvedValue({
+    const loginMock = vi.fn().mockResolvedValue({
       access_token: 'token',
       token_type: 'bearer',
       user: {
@@ -26,6 +23,18 @@ describe('AuthPage', () => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
+    });
+
+    mockedUseAuth.mockReturnValue({
+      user: null,
+      tokens: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
+      login: loginMock,
+      register: vi.fn(),
+      logout: vi.fn(),
+      refreshUser: vi.fn(),
     });
 
     render(
@@ -39,7 +48,7 @@ describe('AuthPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
-      expect(mockedLogin).toHaveBeenCalledWith({ email: 'jane@example.com', password: 'secret123' });
+      expect(loginMock).toHaveBeenCalledWith({ email: 'jane@example.com', password: 'secret123' });
     });
   });
 });

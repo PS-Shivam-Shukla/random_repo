@@ -18,7 +18,7 @@ export const apiClient: AxiosInstance = axios.create({
 // Request Interceptor: Attach JWT Token
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem(ENV.TOKEN_KEY) || localStorage.getItem('access_token');
+    const token = localStorage.getItem(ENV.TOKEN_KEY);
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token.replace(/^"|"$/g, '')}`;
     }

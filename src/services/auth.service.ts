@@ -1,7 +1,6 @@
 import { apiClient } from '../api/client';
 import { LoginResponse, UserProfile } from '../types/auth.types';
 import { LoginFormData, RegisterFormData } from '../utils/validationHelpers';
-import { ENV } from '../config/env.config';
 
 export const authService = {
   async login(credentials: LoginFormData): Promise<LoginResponse> {
@@ -34,10 +33,5 @@ export const authService = {
   async getCurrentUser(): Promise<UserProfile> {
     const response = await apiClient.get<UserProfile>('/auth/me');
     return response.data;
-  },
-
-  logout(): void {
-    localStorage.removeItem(ENV.TOKEN_KEY);
-    localStorage.removeItem(ENV.REFRESH_TOKEN_KEY);
   },
 };

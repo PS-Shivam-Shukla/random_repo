@@ -1,34 +1,44 @@
-import { apiClient } from '../../../api/client';
-import { ExecutiveMetrics, QuestionDistributionItem } from '../types/dashboard.types';
+import api from "../../../api/client";
+
+export interface DashboardSummary {
+  total_interviews: number;
+  average_score: number | null;
+  completion_rate: number;
+  in_progress_count: number;
+  weak_competencies: string[];
+  score_trend: {
+    date: string;
+    score: number;
+  }[];
+}
+
+export interface TrendItem {
+  interview_id: string;
+  date: string;
+  score: number;
+}
+
+export interface CompetencyItem {
+  competency: string;
+  avg_score: number;
+  interview_count: number;
+}
 
 export const dashboardService = {
-  async getExecutiveMetrics(): Promise<ExecutiveMetrics> {
-    try {
-      const response = await apiClient.get<ExecutiveMetrics>('/admin/dashboard');
-      return response.data;
-    } catch {
-      return {
-        totalInterviews: 142,
-        activeInterviews: 8,
-        completedInterviews: 130,
-        successRate: 91.5,
-        avgDurationMinutes: 42,
-        avgAtsScore: 88.5,
-        avgTechnicalScore: 92.4,
-        avgCommunicationScore: 89.8,
-        avgHiringProbability: 94.0,
-        activeCandidates: 36,
-      };
-    }
+
+  async getSummary(): Promise<DashboardSummary> {
+    const res = await api.get("/analytics/summary");
+    return res.data.summary;
   },
 
-  async getQuestionDistribution(): Promise<QuestionDistributionItem[]> {
-    return [
-      { category: 'System Architecture', count: 42, avgScore: 94 },
-      { category: 'Frontend & React 19', count: 38, avgScore: 96 },
-      { category: 'Backend & FastAPI', count: 35, avgScore: 92 },
-      { category: 'PostgreSQL DB & Checkpointer', count: 28, avgScore: 90 },
-      { category: 'DevOps & Docker SLA', count: 22, avgScore: 88 },
-    ];
+  async getTrends(): Promise<TrendItem[]> {
+    const res = await api.get("/analytics/trends");
+    return res.data.trends;
   },
+
+  async getCompetencies(): Promise<CompetencyItem[]> {
+    const res = await api.get("/analytics/competencies");
+    return res.data.competencies;
+  }
+
 };

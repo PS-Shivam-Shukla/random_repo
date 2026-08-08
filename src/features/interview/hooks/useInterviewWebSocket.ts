@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { ENV } from '../../../config/env.config';
+import { useAuthStore } from '../../../stores/AuthStore';
 import { useInterviewStore } from '../store/InterviewStore';
 
 export function useInterviewWebSocket(interviewId?: string) {
@@ -18,7 +19,7 @@ export function useInterviewWebSocket(interviewId?: string) {
   useEffect(() => {
     if (!interviewId) return;
 
-    const token = localStorage.getItem(ENV.TOKEN_KEY)?.replace(/^"|"$/g, '') || '';
+    const token = useAuthStore.getState().tokens?.access_token?.replace(/^"|"$/g, '') || '';
     const wsUrl = `${ENV.WS_BASE_URL}/ws/interviews/${interviewId}?token=${encodeURIComponent(token)}`;
 
     let pingInterval: any;

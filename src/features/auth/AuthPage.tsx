@@ -4,7 +4,7 @@ import { Eye, EyeOff, Sparkles, AlertCircle, ShieldAlert } from 'lucide-react';
 import { z } from 'zod';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
-import { authApi } from '../../services/auth.api';
+import { useAuth } from "../../hooks/useAuth";
 import { AuthLayoutShell } from './AuthLayoutShell';
 
 const signInSchema = z.object({
@@ -14,6 +14,7 @@ const signInSchema = z.object({
 
 export function AuthPage() {
   const navigate = useNavigate();
+  const { login, isAuthenticated } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
@@ -24,10 +25,10 @@ export function AuthPage() {
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.localStorage.getItem('access_token')) {
+    if (isAuthenticated) {
       navigate('/dashboard', { replace: true });
     }
-  }, [navigate]);
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -48,13 +49,7 @@ export function AuthPage() {
     setLoading(true);
 
     try {
-      const response = await authApi.login({ email, password });
-
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem('access_token', response.access_token);
-        window.localStorage.setItem('user', JSON.stringify(response.user));
-      }
-
+      await login({ email, password });
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
       const status = err?.response?.status;
