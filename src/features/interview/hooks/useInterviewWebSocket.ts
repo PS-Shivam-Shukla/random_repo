@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { ENV } from '../../../config/env.config';
 import { useAuthStore } from '../../../stores/AuthStore';
 import { useInterviewStore } from '../store/InterviewStore';
@@ -8,6 +8,11 @@ export function useInterviewWebSocket(interviewId?: string) {
   const pingStartTimeRef = useRef<number>(0);
   const reconnectAttemptsRef = useRef<number>(0);
 
+  const audioQueueRef = useRef<(ArrayBuffer | Blob)[]>([]);
+  const isPlayingRef = useRef<boolean>(false);
+  const activeAudioRef = useRef<HTMLAudioElement | null>(null);
+  const currentObjectUrlRef = useRef<string | null>(null);
+
   const {
     setWsConnected,
     setLatencyMs,
@@ -15,6 +20,86 @@ export function useInterviewWebSocket(interviewId?: string) {
     addTranscriptEntry,
     updateMetrics,
   } = useInterviewStore();
+
+  const cleanupCurrentAudio = useCallback(() => {
+    if (activeAudioRef.current) {
+      activeAudioRef.current.pause();
+      activeAudioRef.current.onended = null;
+      activeAudioRef.current.onerror = null;
+      activeAudioRef.current = null;
+    }
+    if (currentObjectUrlRef.current) {
+      try {
+        URL.revokeObjectURL(currentObjectUrlRef.current);
+      } catch {
+        // Ignore revocation errors
+      }
+      currentObjectUrlRef.current = null;
+    }
+  }, []);
+
+  const processAudioQueue = useCallback(async () => {
+    if (isPlayingRef.current || audioQueueRef.current.length === 0) return;
+
+    const audioData = audioQueueRef.current.shift();
+    if (!audioData) return;
+
+    isPlayingRef.current = true;
+    setAIState('SPEAKING');
+
+    try {
+      const blob =
+        audioData instanceof Blob
+          ? audioData
+          : new Blob([audioData], { type: 'audio/wav' });
+
+      const objectUrl = URL.createObjectURL(blob);
+      currentObjectUrlRef.current = objectUrl;
+
+      const audio = new Audio();
+      activeAudioRef.current = audio;
+      audio.src = objectUrl;
+
+      await new Promise<void>((resolve) => {
+        const handleEnded = () => {
+          cleanupCurrentAudio();
+          resolve();
+        };
+
+        const handleError = () => {
+          console.warn('TTS Audio Playback error or autoplay restriction');
+          cleanupCurrentAudio();
+          resolve();
+        };
+
+        audio.onended = handleEnded;
+        audio.onerror = handleError as OnErrorEventHandler;
+
+        audio.play().catch((err) => {
+          console.warn('Browser autoplay prevented audio play:', err);
+          cleanupCurrentAudio();
+          resolve();
+        });
+      });
+    } catch (err) {
+      console.warn('Error creating or playing TTS audio blob:', err);
+      cleanupCurrentAudio();
+    } finally {
+      isPlayingRef.current = false;
+      setAIState('IDLE');
+      if (audioQueueRef.current.length > 0) {
+        processAudioQueue();
+      }
+    }
+  }, [setAIState, cleanupCurrentAudio]);
+
+  const enqueueAudioResponse = useCallback(
+    (audioData: ArrayBuffer | Blob) => {
+      audioQueueRef.current.push(audioData);
+      processAudioQueue();
+    },
+    [processAudioQueue]
+  );
 
   useEffect(() => {
     if (!interviewId) return;
@@ -27,6 +112,7 @@ export function useInterviewWebSocket(interviewId?: string) {
     const connectWS = () => {
       try {
         const ws = new WebSocket(wsUrl);
+        ws.binaryType = 'arraybuffer';
         wsRef.current = ws;
 
         ws.onopen = () => {
@@ -42,6 +128,13 @@ export function useInterviewWebSocket(interviewId?: string) {
         };
 
         ws.onmessage = (event) => {
+          // 1. Binary Frame: TTS Audio Response
+          if (event.data instanceof ArrayBuffer || event.data instanceof Blob) {
+            enqueueAudioResponse(event.data);
+            return;
+          }
+
+          // 2. Text Frame: Control Messages & Events
           try {
             const data = JSON.parse(event.data);
 
@@ -61,7 +154,7 @@ export function useInterviewWebSocket(interviewId?: string) {
               updateMetrics(data.metrics);
             }
           } catch (e) {
-            console.warn('Error parsing WS message', e);
+            console.warn('Error parsing WS text message', e);
           }
         };
 
@@ -87,11 +180,14 @@ export function useInterviewWebSocket(interviewId?: string) {
 
     return () => {
       clearInterval(pingInterval);
+      audioQueueRef.current = [];
+      isPlayingRef.current = false;
+      cleanupCurrentAudio();
       if (wsRef.current) {
         wsRef.current.close();
       }
     };
-  }, [interviewId]);
+  }, [interviewId, enqueueAudioResponse, cleanupCurrentAudio, setWsConnected, setLatencyMs, setAIState, addTranscriptEntry, updateMetrics]);
 
   const sendEvent = (eventData: object) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -99,5 +195,29 @@ export function useInterviewWebSocket(interviewId?: string) {
     }
   };
 
-  return { sendEvent };
+  const sendAudioChunk = (chunk: Blob) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      if (chunk && chunk.size > 0) {
+        wsRef.current.send(chunk);
+      }
+    }
+  };
+
+  const endCandidateSpeech = () => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(
+        JSON.stringify({
+          type: 'END_CANDIDATE_SPEECH',
+          event: 'END_CANDIDATE_SPEECH',
+        })
+      );
+    }
+  };
+
+  return {
+    sendEvent,
+    sendAudioChunk,
+    endCandidateSpeech,
+    wsRef,
+  };
 }
