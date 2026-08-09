@@ -1,24 +1,26 @@
 import React from 'react';
 import { Brain, Mic, Sparkles, Activity } from 'lucide-react';
-import { Badge } from '../../../components/ui/Badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { useAuth } from '../../../hooks/useAuth';
-import { Topbar } from '../../../layouts/Topbar';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
 
   return (
     <div className="flex flex-col space-y-6">
-      <Topbar
-        title={`Welcome back, ${user?.full_name || 'Candidate'}!`}
-        description="InterviewSage AI Enterprise Platform Foundation Ready."
-        actions={
-          <Badge variant="success" className="px-3 py-1">
-            Backend Systems Active
-          </Badge>
-        }
-      />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-800 pb-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white">
+            Welcome back, {user?.full_name || 'Candidate'}!
+          </h1>
+          <p className="text-sm text-gray-400">
+            InterviewSage AI Enterprise Platform Foundation Ready.
+          </p>
+        </div>
+        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 w-fit">
+          Backend Systems Active
+        </span>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="border-indigo-900/40 bg-indigo-950/10">

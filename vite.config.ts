@@ -19,6 +19,12 @@ export default defineConfig({
       },
     },
   },
+  test: {
+    globals: true,
+    environment: 'node',
+    include: ['src/**/*.test.ts'],
+    exclude: ['e2e/**', 'node_modules/**'],
+  },
   build: {
     outDir: 'dist',
     sourcemap: true,

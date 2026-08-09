@@ -97,6 +97,7 @@ export const AIAvatar: React.FC<AIAvatarProps> = ({ state, className }) => {
         key={state}
         initial={{ opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
+        aria-live="polite"
         className="flex items-center space-x-2 text-xs font-bold tracking-wide uppercase"
       >
         <span

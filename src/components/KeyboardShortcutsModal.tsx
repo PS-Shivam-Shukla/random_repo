@@ -1,9 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Keyboard, X } from 'lucide-react';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 export const KeyboardShortcutsModal: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+
+  const containerRef = useFocusTrap<HTMLDivElement>({
+    isOpen,
+    onClose: () => setIsOpen(false),
+  });
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -11,13 +17,10 @@ export const KeyboardShortcutsModal: React.FC = () => {
         e.preventDefault();
         setIsOpen((prev) => !prev);
       }
-      if (e.key === 'Escape' && isOpen) {
-        setIsOpen(false);
-      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
+  }, []);
 
   const shortcuts = [
     { key: 'Ctrl + K', description: 'Open Global Command Palette & Search' },
@@ -37,23 +40,31 @@ export const KeyboardShortcutsModal: React.FC = () => {
             exit={{ opacity: 0 }}
             onClick={() => setIsOpen(false)}
             className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+            aria-hidden="true"
           />
           <motion.div
+            ref={containerRef}
+            tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Keyboard Shortcuts Guide"
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            className="relative z-50 w-full max-w-md overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl p-5 space-y-4"
+            className="relative z-50 w-full max-w-md overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl p-5 space-y-4 focus-visible:outline-none"
           >
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center space-x-2">
-                <Keyboard className="w-5 h-5 text-indigo-400" />
+                <Keyboard className="w-5 h-5 text-indigo-400" aria-hidden="true" />
                 <h3 className="text-sm font-bold text-slate-100">Keyboard Shortcuts Guide</h3>
               </div>
               <button
+                type="button"
                 onClick={() => setIsOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800"
+                aria-label="Close keyboard shortcuts guide"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
 

@@ -29,6 +29,7 @@ export default function AppRoutes() {
                 <Route path="/interviews" element={<InterviewPage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/reports/:interviewId" element={<ReportsPage />} />
                 <Route path="/memory" element={<MemoryPage />} />
                 <Route path="/career" element={<CareerPage />} />
                 <Route path="/admin" element={<AdminPage />} />

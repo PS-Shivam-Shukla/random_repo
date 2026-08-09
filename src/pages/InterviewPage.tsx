@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Play, AlertCircle, Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Play, AlertCircle, Loader2, Sparkles, CheckCircle2, Award } from 'lucide-react';
 import { useInterviewStore } from '../features/interview/store/InterviewStore';
 import { useInterviewPlan } from '../features/interview/hooks/useInterviewPlan';
 import { useSubmitAnswer } from '../features/interview/hooks/useSubmitAnswer';
@@ -14,6 +15,7 @@ import { InterviewMetricsPanel } from '../features/interview/components/Intervie
 import { Button } from '../components/ui/Button';
 
 export default function InterviewPage() {
+  const navigate = useNavigate();
   const {
     activeInterview,
     isPaused,
@@ -185,18 +187,30 @@ export default function InterviewPage() {
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-2xl lg:text-3xl font-bold text-slate-100">
-              Interview Completed Successfully!
+            <h1 className="text-2xl lg:text-3xl font-bold text-slate-100 font-display">
+              Interview Complete
             </h1>
             <p className="text-slate-400 text-sm max-w-md mx-auto leading-relaxed">
-              All question turns have been evaluated via the EvaluationAgent and persisted to PostgreSQL.
+              Your performance report is ready! All question turns have been evaluated via the EvaluationAgent and persisted to PostgreSQL.
             </p>
           </div>
 
-          <div className="pt-4 flex justify-center">
+          <div className="pt-4 flex flex-col sm:flex-row justify-center gap-4">
+            <Button
+              onClick={() => {
+                const targetId = (activeInterview as any).report_id || activeInterview.id;
+                setActiveInterview(null);
+                navigate(`/reports/${targetId}`);
+              }}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+            >
+              <Award className="w-5 h-5 text-indigo-200" />
+              <span>View Performance Report</span>
+            </Button>
             <Button
               onClick={() => setActiveInterview(null)}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-3 rounded-xl transition-all"
+              variant="outline"
+              className="border-slate-800 text-slate-300 hover:bg-slate-800 px-6 py-3 rounded-xl transition-all"
             >
               Start Another Interview
             </Button>
