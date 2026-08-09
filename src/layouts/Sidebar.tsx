@@ -25,7 +25,7 @@ const navItems = [
   { title: "Analytics", path: "/analytics", icon: BarChart3 },
   { title: "Reports", path: "/reports", icon: Award },
   { title: "Memory", path: "/memory", icon: BrainCircuit },
-  { title: "Career", path: "/career", icon: Compass },
+  { title: "Job Descriptions", path: "/career", icon: Compass },
   { title: "Admin", path: "/admin", icon: ShieldCheck },
   { title: "Settings", path: "/settings", icon: Settings },
 ];

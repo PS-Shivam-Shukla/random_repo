@@ -1,5 +1,10 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { jdService, JobDescriptionCreatePayload, JobDescriptionResponse } from '../services/jd.service';
+import {
+  jdService,
+  JobDescriptionCreatePayload,
+  JobDescriptionResponse,
+  JobDescriptionMatchResponse,
+} from '../services/jd.service';
 
 export function useCreateJobDescription() {
   return useMutation<JobDescriptionResponse, Error, JobDescriptionCreatePayload>({
@@ -12,5 +17,18 @@ export function useJobDescription(id?: string) {
     queryKey: ['job-description', id],
     queryFn: () => jdService.getJobDescription(id!),
     enabled: !!id,
+  });
+}
+
+export function useListJobDescriptions() {
+  return useQuery<JobDescriptionResponse[], Error>({
+    queryKey: ['job-descriptions'],
+    queryFn: () => jdService.listJobDescriptions(),
+  });
+}
+
+export function useMatchResumeWithJd() {
+  return useMutation<JobDescriptionMatchResponse, Error, { jdId: string; resumeId: string }>({
+    mutationFn: ({ jdId, resumeId }) => jdService.matchResumeWithJd(jdId, resumeId),
   });
 }

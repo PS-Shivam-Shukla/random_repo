@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Play, AlertCircle, Loader2, Sparkles, CheckCircle2, Award } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Play, AlertCircle, Loader2, Sparkles, CheckCircle2, Award, FileText, Briefcase } from 'lucide-react';
 import { useInterviewStore } from '../features/interview/store/InterviewStore';
 import { useInterviewPlan } from '../features/interview/hooks/useInterviewPlan';
 import { useSubmitAnswer } from '../features/interview/hooks/useSubmitAnswer';
 import { useCreateInterview } from '../features/interview/hooks/useCreateInterview';
+import { useResumeList } from '../features/resume/hooks/useResumeList';
+import { useListJobDescriptions } from '../hooks/useJobDescription';
 import { AIAvatar } from '../features/interview/components/AIAvatar';
 import { InterviewHeader } from '../features/interview/components/InterviewHeader';
 import { InterviewProgress } from '../features/interview/components/InterviewProgress';
@@ -16,6 +18,8 @@ import { Button } from '../components/ui/Button';
 
 export default function InterviewPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
   const {
     activeInterview,
     isPaused,
@@ -26,14 +30,32 @@ export default function InterviewPage() {
     setActiveInterview,
   } = useInterviewStore();
 
+  const { data: resumes } = useResumeList();
+  const { data: savedJds } = useListJobDescriptions();
   const { data: planData, isLoading: isPlanLoading, isError: isPlanError } = useInterviewPlan(activeInterview?.id);
   const submitAnswerMutation = useSubmitAnswer();
   const createInterviewMutation = useCreateInterview();
+
+  const [selectedResumeId, setSelectedResumeId] = useState<string>(searchParams.get('resumeId') || '');
+  const [selectedJdId, setSelectedJdId] = useState<string>(searchParams.get('jdId') || '');
 
   const [activeQuestion, setActiveQuestion] = useState<any>(null);
   const [nextQuestionPending, setNextQuestionPending] = useState<any>(null);
   const [lastEvaluation, setLastEvaluation] = useState<any>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Sync default selection from loaded resumes & JDs if searchParams not provided
+  useEffect(() => {
+    if (resumes && resumes.length > 0 && !selectedResumeId) {
+      setSelectedResumeId(resumes[0].id);
+    }
+  }, [resumes, selectedResumeId]);
+
+  useEffect(() => {
+    if (savedJds && savedJds.length > 0 && !selectedJdId) {
+      setSelectedJdId(savedJds[0].id);
+    }
+  }, [savedJds, selectedJdId]);
 
   // Sync initial question from backend plan response
   useEffect(() => {
@@ -101,9 +123,12 @@ export default function InterviewPage() {
 
   // Handle Launch New Interview
   const handleCreateSession = () => {
+    const targetJd = savedJds?.find((j) => j.id === selectedJdId);
     createInterviewMutation.mutate({
-      target_role: 'Senior Backend Engineer',
-      target_company: 'InterviewSage AI',
+      resume_id: selectedResumeId || undefined,
+      jd_id: selectedJdId || undefined,
+      target_role: targetJd?.target_role || 'Senior Backend Engineer',
+      target_company: targetJd?.company_name || 'InterviewSage AI',
       interview_mode: 'TEXT',
       difficulty: 'ADAPTIVE',
     });
@@ -119,12 +144,51 @@ export default function InterviewPage() {
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-2xl lg:text-3xl font-bold text-slate-100">
-              No Active Interview Session
+            <h1 className="text-2xl lg:text-3xl font-bold text-slate-100 font-display">
+              Launch Tailored Multi-Agent Interview
             </h1>
             <p className="text-slate-400 text-sm max-w-md mx-auto leading-relaxed">
-              Launch a live multi-agent interview session to generate personalized questions and evaluate your responses in real time.
+              Launch a live interview session using your target Resume & Job Description to generate personalized questions in real time.
             </p>
+          </div>
+
+          {/* Selector Dropdowns for Resume & Job Description */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto text-left pt-2">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                <FileText className="h-3.5 w-3.5 text-emerald-400" /> Resume Target
+              </label>
+              <select
+                value={selectedResumeId}
+                onChange={(e) => setSelectedResumeId(e.target.value)}
+                className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-xs text-white shadow-2xs focus:border-indigo-500 focus:outline-none"
+              >
+                <option value="">Default Demo Resume</option>
+                {resumes?.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.file_path ? r.file_path.split(/[/\\\\]/).pop() : `Resume (${r.id.slice(0, 8)})`}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                <Briefcase className="h-3.5 w-3.5 text-blue-400" /> Job Description Target
+              </label>
+              <select
+                value={selectedJdId}
+                onChange={(e) => setSelectedJdId(e.target.value)}
+                className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-xs text-white shadow-2xs focus:border-indigo-500 focus:outline-none"
+              >
+                <option value="">Default Demo Job Description</option>
+                {savedJds?.map((j) => (
+                  <option key={j.id} value={j.id}>
+                    {j.target_role} {j.company_name ? `(${j.company_name})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="pt-4 flex justify-center">
@@ -141,7 +205,7 @@ export default function InterviewPage() {
               ) : (
                 <>
                   <Play className="w-5 h-5" />
-                  <span>Start New AI Interview</span>
+                  <span>Start Live Multi-Agent Session</span>
                 </>
               )}
             </Button>

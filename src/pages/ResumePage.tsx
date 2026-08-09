@@ -1,13 +1,15 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useResumeList } from "../features/resume/hooks/useResumeList";
 import { useUploadResume } from "../features/resume/hooks/useUploadResume";
 import { useDeleteResume } from "../features/resume/hooks/useDeleteResume";
 import { useResumeAnalysis } from "../features/resume/hooks/useResumeAnalysis";
 import { DragDropUploader } from "../features/resume/components/DragDropUploader";
-import { FileText, Trash2, Eye, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
+import { FileText, Trash2, Eye, Sparkles, CheckCircle2, AlertCircle, ArrowRight, Briefcase } from "lucide-react";
 import { Button } from "../components/ui/Button";
 
 export default function ResumePage() {
+  const navigate = useNavigate();
   const [selectedResumeId, setSelectedResumeId] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
 
@@ -41,7 +43,7 @@ export default function ResumePage() {
       <div>
         <h1 className="text-2xl font-bold text-white font-display">Resume Intelligence</h1>
         <p className="text-xs text-neutral-400">
-          Upload and analyze your target resume for AI-driven skill parsing and interview matching.
+          Upload and analyze your target resume for AI-driven skill parsing and job description matching.
         </p>
       </div>
 
@@ -98,42 +100,36 @@ export default function ResumePage() {
                     className={`group flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer ${
                       isSelected
                         ? "border-blue-500/50 bg-blue-500/10 text-white shadow-xs"
-                        : "border-neutral-800 bg-neutral-900/40 text-neutral-300 hover:border-neutral-700 hover:bg-neutral-800/40"
+                        : "border-neutral-800/80 bg-neutral-900/40 text-neutral-300 hover:border-neutral-700 hover:bg-neutral-900/80"
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <FileText className={`h-5 w-5 shrink-0 ${isSelected ? "text-blue-400" : "text-neutral-400"}`} />
+                      <div className={`p-2 rounded-lg ${isSelected ? "bg-blue-500/20 text-blue-400" : "bg-neutral-800 text-neutral-400"}`}>
+                        <FileText className="h-4 w-4 shrink-0" />
+                      </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold truncate">{fileName}</p>
-                        <p className="text-[10px] text-neutral-500 font-mono">
-                          {new Date(resume.created_at || Date.now()).toLocaleDateString()}
+                        <p className="text-xs font-semibold truncate max-w-[150px]">{fileName}</p>
+                        <p className="text-[10px] text-neutral-400 font-mono">
+                          {new Date(resume.created_at).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedResumeId(resume.id);
-                        }}
-                        className="h-7 w-7 p-0 text-neutral-400 hover:text-white"
-                        title="View AI Analysis"
+                      <button
+                        onClick={() => setSelectedResumeId(resume.id)}
+                        className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800"
+                        title="View Analysis"
                       >
                         <Eye className="h-3.5 w-3.5" />
-                      </Button>
-
-                      <Button
-                        size="sm"
-                        variant="ghost"
+                      </button>
+                      <button
                         onClick={(e) => handleDelete(resume.id, e)}
-                        className="h-7 w-7 p-0 text-neutral-400 hover:text-rose-400"
+                        className="p-1.5 rounded-lg text-neutral-400 hover:text-rose-400 hover:bg-neutral-800"
                         title="Delete Resume"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      </button>
                     </div>
                   </div>
                 );
@@ -142,43 +138,59 @@ export default function ResumePage() {
           )}
         </div>
 
-        {/* Right Column: AI Resume Analysis */}
-        <div className="lg:col-span-2">
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-6 min-h-[300px]">
-            <div className="flex items-center gap-2 mb-6 border-b border-neutral-800/80 pb-4">
-              <Sparkles className="h-4 w-4 text-blue-400" />
-              <h2 className="text-sm font-bold text-white">AI Skill & ATS Evaluation</h2>
+        {/* Right Column: AI Analysis Display */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-6">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-4 mb-6">
+              <div className="flex items-center gap-2 text-white font-bold text-sm">
+                <Sparkles className="h-4 w-4 text-blue-400" />
+                Parsed AI Resume Intelligence
+              </div>
+              {selectedResumeId && (
+                <span className="text-[10px] font-mono text-neutral-400">
+                  ID: {selectedResumeId}
+                </span>
+              )}
             </div>
 
             {!selectedResumeId ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center text-neutral-500">
-                <FileText className="h-10 w-10 text-neutral-700 mb-3" />
-                <p className="text-xs font-medium">Select a resume from the list to inspect AI parsed insights.</p>
+              <div className="py-16 text-center text-xs text-neutral-500">
+                Select an uploaded resume from the left list to view detailed AI analysis.
               </div>
             ) : isAnalysisLoading ? (
-              <div className="flex items-center justify-center py-16 text-xs text-neutral-400 gap-2">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
-                Analyzing resume structure and skills...
+              <div className="py-16 flex flex-col items-center justify-center text-xs text-neutral-400 gap-2">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+                Fetching LLM analysis state...
               </div>
             ) : !analysis ? (
-              <p className="text-xs text-neutral-400 py-8 text-center">Analysis unavailable for selected document.</p>
+              <div className="py-16 text-center text-xs text-neutral-500">
+                No analysis data available for this resume.
+              </div>
             ) : (
               <div className="space-y-6">
-                {/* Score Header */}
-                <div className="flex items-center justify-between rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
-                  <div>
-                    <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
-                      Resume Quality Score
+                {/* Core Overview Metrics */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-4">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                      Seniority Signal
                     </span>
-                    <p className="text-2xl font-bold text-white font-mono mt-1">
-                      {analysis.resume_quality_score ?? 85} / 100
+                    <p className="text-xl font-bold text-white font-mono mt-1">
+                      {analysis.seniority_signal || "MID"}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
-                      Industry Percentile
+                  <div className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-4">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                      Parsed Technical Skills
                     </span>
-                    <p className="text-2xl font-bold text-emerald-400 font-mono mt-1">
+                    <p className="text-xl font-bold text-blue-400 font-mono mt-1">
+                      {analysis.skills?.technical?.length || 0} Skills
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-4">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                      Market Alignment
+                    </span>
+                    <p className="text-xl font-bold text-emerald-400 font-mono mt-1">
                       Top {100 - (analysis.industry_percentile ?? 95)}%
                     </p>
                   </div>
@@ -222,6 +234,18 @@ export default function ResumePage() {
                       {analysis.summary || "Quantify achievement metrics for higher ATS ranking across senior roles."}
                     </p>
                   </div>
+                </div>
+
+                {/* Continue to Job Description & Match CTA */}
+                <div className="pt-4 border-t border-neutral-800 flex justify-end">
+                  <Button
+                    onClick={() => navigate(`/job-descriptions?resumeId=${selectedResumeId}`)}
+                    className="rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs py-2.5 px-5 flex items-center gap-2 shadow-md shadow-blue-600/20"
+                  >
+                    <Briefcase className="h-4 w-4" />
+                    Continue to Job Description & Match
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             )}
