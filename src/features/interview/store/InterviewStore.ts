@@ -30,16 +30,16 @@ interface InterviewState {
 }
 
 const initialMetrics: LiveInterviewMetrics = {
-  wpm: 145,
-  silenceSeconds: 1.2,
-  latencyMs: 120,
-  speechQualityScore: 94,
-  answerQualityScore: 92,
-  technicalScore: 95,
-  communicationScore: 90,
-  confidenceScore: 94,
+  wpm: 0,
+  silenceSeconds: 0,
+  latencyMs: 0,
+  speechQualityScore: 0,
+  answerQualityScore: 0,
+  technicalScore: 0,
+  communicationScore: 0,
+  confidenceScore: 0,
   currentDifficulty: 'ADAPTIVE',
-  currentCompetency: 'System Architecture & Concurrency',
+  currentCompetency: '',
   timeElapsedSeconds: 0,
 };
 

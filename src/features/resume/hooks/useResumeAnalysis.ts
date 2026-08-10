@@ -7,6 +7,15 @@ export function useResumeAnalysis(resumeId?: string) {
     queryKey: ['resume-analysis', resumeId],
     queryFn: () => resumeService.getResumeAnalysis(resumeId!),
     enabled: !!resumeId,
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      if (!data) return 2000;
+      // Authoritative polling: poll strictly while PROCESSING; stop on COMPLETED or FAILED
+      if (data.status === 'COMPLETED' || data.status === 'FAILED') {
+        return false;
+      }
+      return 2000;
+    },
   });
 }
 

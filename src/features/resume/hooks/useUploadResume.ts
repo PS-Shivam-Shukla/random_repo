@@ -7,8 +7,10 @@ export function useUploadResume(onUploadProgress?: (progress: number) => void) {
 
   return useMutation<Resume, Error, File>({
     mutationFn: (file: File) => resumeService.uploadResume(file, onUploadProgress),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['resumes'] });
+      queryClient.invalidateQueries({ queryKey: ['resume-analysis', data?.id] });
+      queryClient.invalidateQueries({ queryKey: ['resume-analysis'] });
     },
   });
 }

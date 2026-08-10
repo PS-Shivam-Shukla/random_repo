@@ -44,6 +44,11 @@ export const interviewService = {
     return response.data;
   },
 
+  async completeInterview(interviewId: string): Promise<Interview> {
+    const response = await apiClient.post<Interview>(`/interviews/${interviewId}/complete`);
+    return response.data;
+  },
+
   async getTranscript(interviewId: string): Promise<TranscriptEntry[]> {
     try {
       const response = await apiClient.get<TranscriptEntry[]>(`/transcripts/${interviewId}`);

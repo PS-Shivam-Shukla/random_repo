@@ -8,7 +8,7 @@ import { ENV } from '../config/env.config';
  */
 export const apiClient: AxiosInstance = axios.create({
   baseURL: ENV.API_BASE_URL,
-  timeout: 30000,
+  timeout: 120000,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
@@ -39,18 +39,22 @@ apiClient.interceptors.response.use(
       localStorage.removeItem(ENV.TOKEN_KEY);
       localStorage.removeItem(ENV.REFRESH_TOKEN_KEY);
 
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      const isPublicAuthRoute = typeof window !== 'undefined' &&
+        (window.location.pathname === '/login' || window.location.pathname === '/register');
+
+      if (!isPublicAuthRoute) {
         window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
       }
       return Promise.reject(error);
     }
 
-    // Automatic retry for 5xx server errors or network disconnects
+    // Automatic retry ONLY for idempotent GET requests on 5xx server errors or network disconnects
     const status = error.response?.status;
     const isServerError = status && status >= 500 && status < 600;
     const isNetworkError = !error.response && error.request;
+    const isGetRequest = originalRequest?.method?.toUpperCase() === 'GET';
 
-    if ((isServerError || isNetworkError) && originalRequest) {
+    if (isGetRequest && (isServerError || isNetworkError) && originalRequest) {
       originalRequest._retryCount = (originalRequest._retryCount || 0) + 1;
 
       if (originalRequest._retryCount <= 2) {

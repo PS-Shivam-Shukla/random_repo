@@ -51,9 +51,7 @@ export default function CareerPage() {
     if (!rawText.trim() || !targetRole.trim()) return;
 
     try {
-      setProcessingStage("Uploading Job Description...");
-      setTimeout(() => setProcessingStage("Extracting Skill Competencies via Ollama..."), 1000);
-      setTimeout(() => setProcessingStage("Analyzing Seniority & Responsibilities..."), 3000);
+      setProcessingStage("Analyzing Job Description & extracting skill competencies with AI agents...");
 
       const result = await createJdMutation.mutateAsync({
         raw_text: rawText,

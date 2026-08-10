@@ -28,6 +28,7 @@ export default function InterviewPage() {
     setAIState,
     setIsPaused,
     setActiveInterview,
+    updateMetrics,
   } = useInterviewStore();
 
   const { data: resumes } = useResumeList();
@@ -43,6 +44,15 @@ export default function InterviewPage() {
   const [nextQuestionPending, setNextQuestionPending] = useState<any>(null);
   const [lastEvaluation, setLastEvaluation] = useState<any>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Live Timer Effect
+  useEffect(() => {
+    if (!activeInterview || isPaused || activeInterview.status === 'COMPLETED') return;
+    const timer = setInterval(() => {
+      updateMetrics({ timeElapsedSeconds: (metrics.timeElapsedSeconds || 0) + 1 });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [activeInterview, isPaused, metrics.timeElapsedSeconds, updateMetrics]);
 
   // Sync default selection from loaded resumes & JDs if searchParams not provided
   useEffect(() => {
@@ -64,12 +74,13 @@ export default function InterviewPage() {
       const firstQ = plan.first_question || plan.blueprint?.questions?.[0] || activeInterview?.current_question;
       if (firstQ && !activeQuestion) {
         setActiveQuestion({
-          id: firstQ.id || 'q-1',
+          id: firstQ.id || '',
           sequence_number: firstQ.sequence_number || 1,
           round_type: firstQ.type || firstQ.round_type || 'TECHNICAL',
-          competency: firstQ.competency || firstQ.competency_focus || 'Backend Architecture',
+          competency: firstQ.competency || firstQ.competency_focus || '',
           difficulty: firstQ.difficulty || 'MEDIUM',
-          text: firstQ.text || firstQ.question_text || 'Explain Python concurrency and database connection pooling.',
+          // No hardcoded fallback — if question_text is missing, show loading state
+          text: firstQ.text || firstQ.question_text || '',
         });
       }
     }
@@ -92,9 +103,19 @@ export default function InterviewPage() {
 
       if (response?.evaluation) {
         setLastEvaluation(response.evaluation);
+        const evalScore = Number(response.evaluation.score) || 0;
+        updateMetrics({
+          technicalScore: Math.round(evalScore),
+          communicationScore: Number(response.evaluation.communication_score) || Math.round(evalScore),
+          confidenceScore: Number(response.evaluation.confidence_score) || Math.round(evalScore),
+          currentCompetency: activeQuestion.competency || response.evaluation.competency_targeted || '',
+          currentDifficulty: activeQuestion.difficulty || 'MEDIUM',
+        });
       }
 
-      if (response?.next_question) {
+      if (response?.status === 'COMPLETED') {
+        setActiveInterview({ ...activeInterview, status: 'COMPLETED' });
+      } else if (response?.next_question) {
         setNextQuestionPending(response.next_question);
       }
 
@@ -121,17 +142,37 @@ export default function InterviewPage() {
     setLastEvaluation(null);
   };
 
-  // Handle Launch New Interview
-  const handleCreateSession = () => {
-    const targetJd = savedJds?.find((j) => j.id === selectedJdId);
-    createInterviewMutation.mutate({
-      resume_id: selectedResumeId || undefined,
-      jd_id: selectedJdId || undefined,
-      target_role: targetJd?.target_role || 'Senior Backend Engineer',
-      target_company: targetJd?.company_name || 'InterviewSage AI',
-      interview_mode: 'TEXT',
-      difficulty: 'ADAPTIVE',
-    });
+  const [isLaunchingSession, setIsLaunchingSession] = useState<boolean>(false);
+
+  const handleCreateSession = async () => {
+    if (isLaunchingSession || createInterviewMutation.isPending) return;
+    setIsLaunchingSession(true);
+
+    try {
+      const targetJd = savedJds?.find((j) => j.id === selectedJdId);
+      const resolvedRole = targetJd?.target_role || '';
+      await createInterviewMutation.mutateAsync({
+        resume_id: selectedResumeId || undefined,
+        jd_id: selectedJdId || undefined,
+        target_role: resolvedRole,
+        target_company: targetJd?.company_name || 'InterviewSage AI',
+        interview_mode: 'TEXT',
+        difficulty: 'ADAPTIVE',
+      });
+      // Reset metrics to zero at interview start — no fake initial values
+      updateMetrics({
+        technicalScore: 0,
+        communicationScore: 0,
+        confidenceScore: 0,
+        currentCompetency: '',
+        currentDifficulty: 'MEDIUM',
+        timeElapsedSeconds: 0,
+      });
+    } catch (err) {
+      console.error("Failed to launch interview session:", err);
+    } finally {
+      setIsLaunchingSession(false);
+    }
   };
 
   // 1. NO ACTIVE INTERVIEW STATE
@@ -194,10 +235,10 @@ export default function InterviewPage() {
           <div className="pt-4 flex justify-center">
             <Button
               onClick={handleCreateSession}
-              disabled={createInterviewMutation.isPending}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-lg shadow-indigo-600/30 px-8 py-3 rounded-xl transition-all flex items-center space-x-2 text-base"
+              disabled={createInterviewMutation.isPending || isLaunchingSession}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-lg shadow-indigo-600/30 px-8 py-3 rounded-xl transition-all flex items-center space-x-2 text-base disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {createInterviewMutation.isPending ? (
+              {createInterviewMutation.isPending || isLaunchingSession ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
                   <span>Initializing Multi-Agent Session...</span>
@@ -297,7 +338,7 @@ export default function InterviewPage() {
       {/* Progress Bar */}
       <InterviewProgress
         currentQuestionIndex={activeQuestion?.sequence_number || 1}
-        totalQuestions={activeInterview.total_questions || 5}
+        totalQuestions={activeInterview.total_questions || (planData as any)?.blueprint_items?.length || 3}
         currentCompetency={activeQuestion?.competency}
       />
 

@@ -6,6 +6,7 @@ export interface Resume {
   parsed_skills: string[];
   parsed_experience: string[];
   seniority_signal: string;
+  status?: 'PROCESSING' | 'COMPLETED' | 'FAILED';
   created_at: string;
 }
 
@@ -69,11 +70,30 @@ export interface RadarDataPoint {
   benchmarkScore: number;
 }
 
+export interface SeniorityBreakdownData {
+  experience_score: number;
+  ownership_score: number;
+  architecture_score: number;
+  leadership_score: number;
+  complexity_score: number;
+}
+
+export interface ExperienceMetricsData {
+  total_months: number;
+  relevant_months: number;
+}
+
 export interface ResumeAnalysis {
   resume_id: string;
   file_name: string;
+  status?: 'PROCESSING' | 'COMPLETED' | 'FAILED';
   resume_quality_score: number;
   seniority_signal: string;
+  seniority_score?: number;
+  experience_metrics?: ExperienceMetricsData;
+  seniority_breakdown?: SeniorityBreakdownData;
+  seniority_evidence?: string[];
+  seniority_limitations?: string[];
   skills: SkillBreakdown;
   experience: ExperienceItem[];
   education: EducationItem[];

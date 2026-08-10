@@ -17,6 +17,14 @@ export function useJobDescription(id?: string) {
     queryKey: ['job-description', id],
     queryFn: () => jdService.getJobDescription(id!),
     enabled: !!id,
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      if (!data) return 2000;
+      if (data.required_skills && data.required_skills.length > 0) {
+        return false;
+      }
+      return 2000;
+    },
   });
 }
 

@@ -7,5 +7,13 @@ export function useInterviewPlan(interviewId?: string) {
     queryKey: ['interview-plan', interviewId],
     queryFn: () => interviewService.getInterviewPlan(interviewId!),
     enabled: !!interviewId,
+    refetchInterval: (query) => {
+      // Poll every 2 seconds if plan is not yet loaded or doesn't have questions yet
+      const plan = query.state.data ? ((query.state.data as any).plan || query.state.data) : null;
+      if (!plan || !plan.first_question) {
+        return 2000;
+      }
+      return false;
+    },
   });
 }

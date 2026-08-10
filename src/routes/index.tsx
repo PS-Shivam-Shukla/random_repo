@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import { AuthPage } from "../features/auth/AuthPage";
+import { RegisterPage } from "../features/auth/RegisterPage";
 
 import ProtectedRoutes from "./ProtectedRoutes";
 import PublicRoutes from "./PublicRoutes";
@@ -21,6 +22,7 @@ export default function AppRoutes() {
 
             <Route element={<PublicRoutes />}>
                 <Route path="/login" element={<AuthPage />} />
+                <Route path="/register" element={<RegisterPage />} />
             </Route>
 
             <Route element={<ProtectedRoutes />}>

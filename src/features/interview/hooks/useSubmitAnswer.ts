@@ -13,11 +13,14 @@ export function useSubmitAnswer() {
         const ev = data.evaluation;
         const { addTranscriptEntry, updateMetrics } = useInterviewStore.getState();
 
+        // Use actual LLM scores — no hardcoded fallbacks like 88/90/92
+        const evalScore = typeof ev.score === 'number' ? ev.score : 0;
+
         updateMetrics({
-          answerQualityScore: ev.score ?? 88,
-          technicalScore: ev.technical_coverage ?? ev.score ?? 88,
-          communicationScore: ev.communication_score ?? 90,
-          confidenceScore: ev.confidence_score ?? 92,
+          answerQualityScore: evalScore,
+          technicalScore: typeof ev.technical_coverage === 'number' ? ev.technical_coverage : evalScore,
+          communicationScore: typeof ev.communication_score === 'number' ? ev.communication_score : evalScore,
+          confidenceScore: typeof ev.confidence_score === 'number' ? ev.confidence_score : evalScore,
         });
 
         addTranscriptEntry({
@@ -34,9 +37,9 @@ export function useSubmitAnswer() {
             text: ev.reasoning || ev.feedback,
             timestamp: new Date().toISOString(),
             feedback: {
-              technical_score: ev.technical_coverage ?? ev.score ?? 88,
-              communication_score: ev.communication_score ?? 90,
-              confidence_score: ev.confidence_score ?? 92,
+              technical_score: typeof ev.technical_coverage === 'number' ? ev.technical_coverage : evalScore,
+              communication_score: typeof ev.communication_score === 'number' ? ev.communication_score : evalScore,
+              confidence_score: typeof ev.confidence_score === 'number' ? ev.confidence_score : evalScore,
             },
           });
         }

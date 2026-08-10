@@ -1,5 +1,5 @@
 import React from 'react';
-import { Briefcase, Building2, Pause, Play, CheckCircle2, Clock } from 'lucide-react';
+import { Briefcase, Building2, Pause, Play, CheckCircle2, Clock, Square } from 'lucide-react';
 import { Interview } from '../types/interview.types';
 import { Button } from '../../../components/ui/Button';
 import { cn } from '../../../lib/utils';
@@ -8,6 +8,7 @@ export interface InterviewHeaderProps {
   interview: Interview | null;
   isPaused: boolean;
   onTogglePause?: () => void;
+  onEndSession?: () => void;
   className?: string;
 }
 
@@ -15,6 +16,7 @@ export const InterviewHeader: React.FC<InterviewHeaderProps> = ({
   interview,
   isPaused,
   onTogglePause,
+  onEndSession,
   className,
 }) => {
   if (!interview) return null;
@@ -73,26 +75,39 @@ export const InterviewHeader: React.FC<InterviewHeaderProps> = ({
         )}
       </div>
 
-      {onTogglePause && interview.status !== 'COMPLETED' && (
+      {interview.status !== 'COMPLETED' && (
         <div className="flex items-center space-x-3 self-start md:self-auto">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onTogglePause}
-            className="border-slate-700 text-slate-300 hover:text-white hover:border-slate-600"
-          >
-            {isPaused ? (
-              <>
-                <Play className="w-4 h-4 mr-2 text-emerald-400" />
-                Resume Session
-              </>
-            ) : (
-              <>
-                <Pause className="w-4 h-4 mr-2 text-amber-400" />
-                Pause Session
-              </>
-            )}
-          </Button>
+          {onTogglePause && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onTogglePause}
+              className="border-slate-700 text-slate-300 hover:text-white hover:border-slate-600"
+            >
+              {isPaused ? (
+                <>
+                  <Play className="w-4 h-4 mr-2 text-emerald-400" />
+                  Resume
+                </>
+              ) : (
+                <>
+                  <Pause className="w-4 h-4 mr-2 text-amber-400" />
+                  Pause
+                </>
+              )}
+            </Button>
+          )}
+          {onEndSession && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onEndSession}
+              className="border-rose-900/60 bg-rose-950/40 text-rose-300 hover:bg-rose-900/60 hover:text-white hover:border-rose-700"
+            >
+              <Square className="w-4 h-4 mr-2 text-rose-400" />
+              End Session
+            </Button>
+          )}
         </div>
       )}
     </div>

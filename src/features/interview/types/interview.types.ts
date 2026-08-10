@@ -26,7 +26,7 @@ export interface InterviewPlan {
 export interface Interview {
   id: string;
   user_id: string;
-  status: 'PENDING' | 'IN_PROGRESS' | 'PAUSED' | 'COMPLETED' | 'CANCELLED';
+  status: 'PLANNING' | 'READY' | 'IN_PROGRESS' | 'PAUSED' | 'COMPLETED' | 'FAILED' | 'CANCELLED' | 'PENDING';
   current_question_index: number;
   total_questions: number;
   target_role: string;
